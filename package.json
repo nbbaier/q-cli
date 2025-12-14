@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "@types/node": "^25.0.2",
+    "ai": "^5.0.113",
+    "dotenv": "^17.2.3",
+    "tsx": "^4.21.0"
+  },
+  "name": "q-cli",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
