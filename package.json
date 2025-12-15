@@ -11,7 +11,9 @@
 	],
 	"scripts": {
 		"build": "tsdown src/index.ts --platform node --format esm --outDir dist",
-		"migrate": "bun src/migrate.ts"
+		"migrate": "bun src/migrate.ts",
+		"lint:fix": "biome check --write",
+		"lint": "biome check"
 	},
 	"dependencies": {
 		"@ai-sdk/openai": "^2.0.86",
@@ -24,6 +26,7 @@
 		"ora": "^9.0.0"
 	},
 	"devDependencies": {
+		"@biomejs/biome": "2.3.8",
 		"@commander-js/extra-typings": "^14.0.0",
 		"@types/bun": "latest",
 		"@types/node": "^25.0.2",

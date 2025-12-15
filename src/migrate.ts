@@ -7,7 +7,7 @@ import {
 } from "drizzle-kit/api";
 
 import { migrate } from "drizzle-orm/libsql/migrator";
-import { getDb, getDbPath, getMigrationsPath } from "./db/index";
+import { getDb, getMigrationsPath } from "./db/index";
 import * as schema from "./db/schema";
 
 function checkForMigrations(migrationsFolder: string) {
