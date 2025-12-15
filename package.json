@@ -35,5 +35,8 @@
 		"drizzle-kit": "^0.31.8",
 		"tsdown": "^0.17.4",
 		"typescript": "^5.9.3"
-	}
+	},
+	"trustedDependencies": [
+		"q-cli"
+	]
 }
