@@ -3,8 +3,7 @@
 	"version": "0.1.0",
 	"type": "module",
 	"bin": {
-		"q": "./dist/index.mjs",
-		"q-cli": "./dist/index.mjs"
+		"q": "./dist/index.mjs"
 	},
 	"files": [
 		"dist",
