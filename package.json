@@ -13,7 +13,8 @@
 		"build": "tsdown src/index.ts --platform node --format esm --outDir dist",
 		"migrate": "bun src/migrate.ts",
 		"lint:fix": "biome check --write",
-		"lint": "biome check"
+		"lint": "biome check",
+		"prepare": "bun run build"
 	},
 	"dependencies": {
 		"@ai-sdk/openai": "^2.0.86",
