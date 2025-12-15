@@ -9,7 +9,7 @@ export async function insertLog(log: InsertLog): Promise<SelectLog[]> {
 	return await db.insert(responses).values(log).returning();
 }
 
-async function getLogs(limit: number = 10): Promise<SelectLog[]> {
+async function getLogs(limit: number = 3): Promise<SelectLog[]> {
 	const db = await getDb();
 	return await db
 		.select()
@@ -28,7 +28,7 @@ async function getLogById(id: number): Promise<SelectLog | undefined> {
 	return results[0];
 }
 
-export async function updateLogCopied(
+async function _updateLogCopied(
 	id: number,
 	copied: boolean,
 ): Promise<SelectLog[]> {

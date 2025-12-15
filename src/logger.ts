@@ -179,10 +179,10 @@ export const logger: LanguageModelV2Middleware = {
 					output_tokens: usage?.outputTokens,
 					total_tokens: usage?.totalTokens,
 				});
-				},
-				});
+			},
+		});
 
-				return {
+		return {
 			stream: stream.pipeThrough(transformStream),
 			...rest,
 		};

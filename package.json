@@ -14,11 +14,10 @@
 		"migrate": "bun src/migrate.ts"
 	},
 	"dependencies": {
-		"@ai-sdk/anthropic": "^2.0.56",
 		"@ai-sdk/openai": "^2.0.86",
 		"@libsql/client": "^0.15.15",
 		"ai": "^5.0.113",
-		"chalk": "^5.6.2",
+		"chalk": "4",
 		"clipboardy": "^5.0.2",
 		"commander": "^14.0.2",
 		"drizzle-orm": "^0.45.1",
@@ -28,7 +27,6 @@
 		"@commander-js/extra-typings": "^14.0.0",
 		"@types/bun": "latest",
 		"@types/node": "^25.0.2",
-		"@types/commander": "^2.12.5",
 		"drizzle-kit": "^0.31.8",
 		"tsdown": "^0.17.4",
 		"typescript": "^5.9.3"
