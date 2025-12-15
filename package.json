@@ -3,7 +3,7 @@
 	"version": "0.1.0",
 	"type": "module",
 	"bin": {
-		"q": "./src/index.ts"
+		"q": "./src/index.mjs"
 	},
 	"files": [
 		"dist",
