@@ -1,15 +1,15 @@
-import { desc, eq } from "drizzle-orm";
 import chalk from "chalk";
-import { getDb, getDbPath } from "./index";
-import { type InsertLog, type SelectLog, responses } from "./schema";
+import { desc, eq } from "drizzle-orm";
 import { formatLogFull, formatLogShort } from "../format";
+import { getDb, getDbPath } from "./index";
+import { type InsertLog, responses, type SelectLog } from "./schema";
 
 export async function insertLog(log: InsertLog): Promise<SelectLog[]> {
 	const db = await getDb();
 	return await db.insert(responses).values(log).returning();
 }
 
-export async function getLogs(limit: number = 10): Promise<SelectLog[]> {
+async function getLogs(limit: number = 10): Promise<SelectLog[]> {
 	const db = await getDb();
 	return await db
 		.select()
@@ -18,7 +18,7 @@ export async function getLogs(limit: number = 10): Promise<SelectLog[]> {
 		.limit(limit);
 }
 
-export async function getLogById(id: number): Promise<SelectLog | undefined> {
+async function getLogById(id: number): Promise<SelectLog | undefined> {
 	const db = await getDb();
 	const results = await db
 		.select()

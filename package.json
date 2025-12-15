@@ -3,14 +3,14 @@
 	"version": "0.1.0",
 	"type": "module",
 	"bin": {
-		"q": "./dist/index.js"
+		"q": "./dist/index.mjs"
 	},
 	"files": [
 		"dist",
 		"migrations"
 	],
 	"scripts": {
-		"build": "echo '#!/usr/bin/env node' > dist/index.js && bun build src/index.ts --target node >> dist/index.js",
+		"build": "tsdown src/index.ts --platform node --format esm --outDir dist",
 		"migrate": "bun src/migrate.ts"
 	},
 	"dependencies": {
