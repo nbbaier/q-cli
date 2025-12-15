@@ -15,7 +15,7 @@
 		"migrate": "bun src/migrate.ts",
 		"lint:fix": "biome check --write",
 		"lint": "biome check",
-		"prepare": "echo 'Running prepare...' && bun run build && echo 'Build complete'"
+		"postinstall": "bun run build"
 	},
 	"dependencies": {
 		"@ai-sdk/openai": "^2.0.86",
