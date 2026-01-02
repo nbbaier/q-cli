@@ -6,8 +6,8 @@ import { type ModelMessage, streamText, wrapLanguageModel } from "ai";
 import chalk from "chalk";
 import clipboard from "clipboardy";
 import ora from "ora";
-import { handleLogsCommand } from "./db/queries";
-import { logger } from "./logger";
+import { handleLogsCommand, updateLogCopied } from "./db/queries";
+import { getLastLogId, logger } from "./logger";
 
 const model = wrapLanguageModel({
 	model: openai("gpt-4.1-mini"),
@@ -73,6 +73,13 @@ async function handleQuery(query: string): Promise<void> {
 		rl.close();
 		try {
 			await clipboard.write(message);
+
+			// Update the copied status in the database
+			const logId = getLastLogId();
+			if (logId !== null) {
+				await updateLogCopied(logId, true);
+			}
+
 			readline.moveCursor(process.stdout, 0, -printedLines);
 			readline.clearScreenDown(process.stdout);
 			console.log("Copied to clipboard ✅");
