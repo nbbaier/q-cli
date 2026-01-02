@@ -8,6 +8,12 @@ import { insertLog } from "./db/queries";
 const argv = typeof Bun !== "undefined" ? Bun.argv : process.argv;
 const logRawStream = argv.includes("--log-raw-stream");
 
+let lastLogId: number | null = null;
+
+export function getLastLogId(): number | null {
+	return lastLogId;
+}
+
 function serializeError(error: unknown) {
 	if (error instanceof Error) {
 		return {
@@ -43,7 +49,7 @@ export const logger: LanguageModelV2Middleware = {
 			.map((c) => c.text)
 			.join("");
 
-		await insertLog({
+		const logs = await insertLog({
 			model: model.modelId,
 			prompt: prompt.text,
 			system,
@@ -57,6 +63,10 @@ export const logger: LanguageModelV2Middleware = {
 			output_tokens: result.usage?.outputTokens,
 			total_tokens: result.usage?.totalTokens,
 		});
+
+		if (logs[0]?.id) {
+			lastLogId = logs[0].id;
+		}
 
 		return result;
 	},
@@ -165,7 +175,7 @@ export const logger: LanguageModelV2Middleware = {
 					responseJson.raw = rawChunks;
 				}
 
-				await insertLog({
+				const logs = await insertLog({
 					model: model.modelId,
 					prompt: prompt.text,
 					system,
@@ -179,6 +189,10 @@ export const logger: LanguageModelV2Middleware = {
 					output_tokens: usage?.outputTokens,
 					total_tokens: usage?.totalTokens,
 				});
+
+				if (logs[0]?.id) {
+					lastLogId = logs[0].id;
+				}
 			},
 		});
 

@@ -28,7 +28,7 @@ async function getLogById(id: number): Promise<SelectLog | undefined> {
 	return results[0];
 }
 
-async function _updateLogCopied(
+export async function updateLogCopied(
 	id: number,
 	copied: boolean,
 ): Promise<SelectLog[]> {
