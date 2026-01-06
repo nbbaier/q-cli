@@ -2,10 +2,10 @@ import { desc, eq, gt, lt, sql } from "drizzle-orm";
 import { getConfig } from "./config";
 import { getDb } from "./db/index";
 import {
-	type InsertCacheEntry,
-	type SelectCacheEntry,
 	cacheEntries,
+	type InsertCacheEntry,
 	responses,
+	type SelectCacheEntry,
 } from "./db/schema";
 import {
 	bufferToEmbedding,
@@ -70,19 +70,16 @@ export async function lookupCache(
 	} catch (error) {
 		// Propagate embedding generation errors to keep behavior consistent with cache storage
 		if (error instanceof Error) {
-			throw new Error(
-				"Failed to generate embedding for cache lookup",
-				{ cause: error } as ErrorOptions,
-			);
+			throw new Error("Failed to generate embedding for cache lookup", {
+				cause: error,
+			} as ErrorOptions);
 		}
 		throw new Error("Failed to generate embedding for cache lookup");
 	}
 
 	// Generate context hash if we have context
 	const contextHash =
-		contextResponses.length > 0
-			? generateContextHash(contextResponses)
-			: null;
+		contextResponses.length > 0 ? generateContextHash(contextResponses) : null;
 
 	// Fetch all non-expired cache entries
 	const entries = await db
@@ -115,7 +112,10 @@ export async function lookupCache(
 		} else {
 			console.error(
 				"Unexpected type for cache entry query_embedding; skipping entry",
-				{ id: entry.id, type: rawEmbedding === null ? "null" : typeof rawEmbedding },
+				{
+					id: entry.id,
+					type: rawEmbedding === null ? "null" : typeof rawEmbedding,
+				},
 			);
 			continue;
 		}
@@ -125,18 +125,29 @@ export async function lookupCache(
 
 		if (similarity >= threshold) {
 			// For context-dependent queries, prefer exact context match
-			if (contextHash && entry.context_hash === contextHash) {
-				// Exact context match - prioritize this
-				if (
-					!bestMatch ||
-					bestMatch.entry.context_hash !== contextHash ||
-					similarity > bestMatch.similarity
-				) {
+			const isExactContextMatch =
+				contextHash && entry.context_hash === contextHash;
+			const bestMatchIsExactContext =
+				bestMatch?.entry.context_hash === contextHash;
+
+			if (!bestMatch) {
+				// No previous match, use this one
+				bestMatch = { entry, similarity };
+			} else if (isExactContextMatch && !bestMatchIsExactContext) {
+				// Current entry is exact context match, best match is not - always prefer exact match
+				bestMatch = { entry, similarity };
+			} else if (isExactContextMatch && bestMatchIsExactContext) {
+				// Both are exact context matches - prefer higher similarity
+				if (similarity > bestMatch.similarity) {
 					bestMatch = { entry, similarity };
 				}
-			} else if (!bestMatch || similarity > bestMatch.similarity) {
-				bestMatch = { entry, similarity };
+			} else if (!isExactContextMatch && !bestMatchIsExactContext) {
+				// Neither are exact context matches - prefer higher similarity
+				if (similarity > bestMatch.similarity) {
+					bestMatch = { entry, similarity };
+				}
 			}
+			// If current entry is NOT exact match but bestMatch IS exact match, keep bestMatch
 		}
 	}
 
@@ -173,9 +184,7 @@ export async function storeCache(
 
 	// Generate context hash if we have context
 	const contextHash =
-		contextResponses.length > 0
-			? generateContextHash(contextResponses)
-			: null;
+		contextResponses.length > 0 ? generateContextHash(contextResponses) : null;
 
 	const now = new Date();
 	const expiresAt = new Date(
@@ -295,12 +304,20 @@ export async function getCacheStats(): Promise<CacheStats> {
 	// Estimate storage size (query + response + embedding)
 	const storageSize = entries.reduce((sum, e) => {
 		const embeddingSize = (e.query_embedding as Buffer)?.length || 0;
-		return sum + (e.query?.length || 0) + (e.response?.length || 0) + embeddingSize;
+		return (
+			sum + (e.query?.length || 0) + (e.response?.length || 0) + embeddingSize
+		);
 	}, 0);
 
 	const dates = entries.map((e) => e.created_at).filter(Boolean) as Date[];
-	const oldestEntry = dates.length > 0 ? new Date(Math.min(...dates.map((d) => d.getTime()))) : null;
-	const newestEntry = dates.length > 0 ? new Date(Math.max(...dates.map((d) => d.getTime()))) : null;
+	const oldestEntry =
+		dates.length > 0
+			? new Date(Math.min(...dates.map((d) => d.getTime())))
+			: null;
+	const newestEntry =
+		dates.length > 0
+			? new Date(Math.max(...dates.map((d) => d.getTime())))
+			: null;
 
 	return {
 		totalEntries,
