@@ -218,7 +218,7 @@ export async function updateCache(
 	cacheId: number,
 	response: string,
 	responseId: number | null,
-	contextHash?: string | null,
+	_contextHash?: string | null,
 ): Promise<void> {
 	const config = getConfig();
 	const db = await getDb();

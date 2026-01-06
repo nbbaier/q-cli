@@ -150,7 +150,7 @@ async function handleQuery(
 			if (spinner.isSpinning) {
 				spinner.stop();
 			}
-		} catch (error) {
+		} catch (_error) {
 			if (spinner.isSpinning) {
 				spinner.stop();
 			}
@@ -249,7 +249,7 @@ async function handleQuery(
 		try {
 			// Create new cache entry (--refresh just skips lookup, but still stores)
 			await storeCache(query, message, logId, contextResponses);
-		} catch (error) {
+		} catch (_error) {
 			// Cache storage failure is non-fatal
 			if (options.verbose) {
 				console.error(chalk.yellow("\nWarning: Failed to cache response"));
@@ -349,7 +349,7 @@ async function handleRegenerateQuery(
 	options: QueryOptions,
 	cacheMatch: CacheMatch,
 	contextMessages: ModelMessage[],
-	contextResponses: string[],
+	_contextResponses: string[],
 ): Promise<void> {
 	const config = getEffectiveConfig(options);
 	let printedLines = 0;
@@ -411,7 +411,7 @@ async function handleFreshResultInput(
 	message: string,
 	printedLines: number,
 ): Promise<void> {
-	return new Promise((resolve) => {
+	return new Promise((_resolve) => {
 		const rl = readline.createInterface({
 			input: process.stdin,
 			output: process.stdout,
