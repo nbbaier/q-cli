@@ -349,7 +349,7 @@ async function handleRegenerateQuery(
 	options: QueryOptions,
 	cacheMatch: CacheMatch,
 	contextMessages: ModelMessage[],
-	_contextResponses: string[],
+	contextResponses: string[],
 ): Promise<void> {
 	const config = getEffectiveConfig(options);
 	let printedLines = 0;

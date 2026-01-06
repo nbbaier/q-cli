@@ -212,6 +212,10 @@ export async function updateCache(
 	const config = getConfig();
 	const db = await getDb();
 
+	// Generate context hash if we have context
+	const contextHash =
+		contextResponses.length > 0 ? generateContextHash(contextResponses) : null;
+
 	const now = new Date();
 	const expiresAt = new Date(
 		now.getTime() + config.cache.expiry_days * 24 * 60 * 60 * 1000,
