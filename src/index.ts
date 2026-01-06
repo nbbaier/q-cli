@@ -45,7 +45,33 @@ const FEW_SHOT_MESSAGES: ModelMessage[] = [
 	{ role: "assistant", content: 'echo "hi"' },
 ];
 
+/**
+ * Query-specific options that extend the base {@link CLIOptions}.
+ *
+ * This interface is used to control how individual queries are executed,
+ * particularly with respect to caching behavior:
+ *
+ * - `noCache` (inherited from {@link CLIOptions}) disables both reading from
+ *   and writing to the cache for the query. When `noCache` is true, the cache
+ *   is effectively ignored.
+ * - `refresh` (defined below) forces a refresh of the cached value for the
+ *   query: a new response is fetched and the cache is updated even if a
+ *   cached entry exists.
+ *
+ * When both flags are present, `noCache` takes precedence and the cache is
+ * neither read nor written, regardless of the value of `refresh`.
+ */
 interface QueryOptions extends CLIOptions {
+	/**
+	 * If true, bypasses any existing cached response for this query and forces
+	 * a fresh request, updating the cache with the new result.
+	 *
+	 * This is different from `noCache` (from {@link CLIOptions}):
+	 * - `refresh: true` will still use the cache mechanism, but ensures it is
+	 *   repopulated with a fresh value.
+	 * - `noCache: true` disables the cache entirely for the query (no read,
+	 *   no write).
+	 */
 	refresh?: boolean;
 }
 
@@ -121,9 +147,13 @@ async function handleQuery(
 		const spinner = ora("Checking cache...").start();
 		try {
 			cacheMatch = await lookupCache(query, contextResponses);
-			spinner.stop();
+			if (spinner.isSpinning) {
+				spinner.stop();
+			}
 		} catch (error) {
-			spinner.stop();
+			if (spinner.isSpinning) {
+				spinner.stop();
+			}
 			// Continue without cache on error
 		}
 	}
@@ -357,7 +387,12 @@ async function handleRegenerateQuery(
 	if (config.cache.enabled) {
 		const logId = getLastLogId();
 		try {
-			await updateCache(cacheMatch.entry.id, message, logId, contextResponses);
+			await updateCache(
+				cacheMatch.entry.id,
+				message,
+				logId,
+				cacheMatch.entry.context_hash,
+			);
 		} catch {
 			// Non-fatal
 		}
@@ -402,7 +437,7 @@ async function handleFreshResultInput(
 				} else {
 					console.error("Failed to copy to clipboard");
 				}
-				console.error("Failed to copy to clipboard");
+
 				process.exit(1);
 			}
 		});
