@@ -72,38 +72,43 @@ function loadConfigFile(): Partial<Config> {
 	}
 }
 
-export function saveConfig(config: Partial<Config>): void {
+export function saveConfig(config: {
+	cache?: Partial<CacheConfig>;
+	defaults?: Partial<DefaultsConfig>;
+	api?: Partial<ApiConfig>;
+}): void {
 	ensureConfigDir();
 	const configPath = getConfigPath();
 	const existingConfig = loadConfigFile();
-	const mergedConfig = deepMerge(
-		deepMerge(DEFAULT_CONFIG, existingConfig),
-		config,
-	);
+	const mergedConfig = deepMerge(existingConfig, config);
 	writeFileSync(configPath, JSON.stringify(mergedConfig, null, 2), {
 		mode: 0o600,
 	});
 }
 
-function deepMerge(
-	target: Partial<Config>,
-	source: Partial<Config>,
-): Partial<Config> {
-	const result: Partial<Config> = {
+function deepMerge<T extends Partial<Config>>(
+	target: T,
+	source: {
+		cache?: Partial<CacheConfig>;
+		defaults?: Partial<DefaultsConfig>;
+		api?: Partial<ApiConfig>;
+	},
+): T {
+	return {
+		...target,
 		cache: {
-			...(target.cache || {}),
+			...target.cache,
 			...(source.cache || {}),
 		},
 		defaults: {
-			...(target.defaults || {}),
+			...target.defaults,
 			...(source.defaults || {}),
 		},
 		api: {
-			...(target.api || {}),
+			...target.api,
 			...(source.api || {}),
 		},
-	};
-	return result;
+	} as T;
 }
 
 // Cache for loaded config
@@ -115,7 +120,7 @@ export function getConfig(): Config {
 	const fileConfig = loadConfigFile();
 
 	// Merge: defaults < file config < env vars
-	const mergedConfig = deepMerge(DEFAULT_CONFIG, fileConfig);
+	const mergedConfig = deepMerge(DEFAULT_CONFIG, fileConfig) as Config;
 
 	// Override API key from environment if not set in config
 	if (!mergedConfig.api.openai_api_key) {
@@ -169,6 +174,6 @@ export function isCacheConfigured(): boolean {
 
 // Set cache enabled preference
 export function setCacheEnabled(enabled: boolean): void {
-	saveConfig({ cache: { enabled } } as Partial<Config>);
+	saveConfig({ cache: { enabled } });
 	resetConfigCache();
 }
