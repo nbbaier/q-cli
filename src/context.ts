@@ -36,7 +36,9 @@ export async function getContextMessages(
  * Get only the response texts for context hash generation
  * Used for cache context matching
  */
-export async function getContextResponses(limit: number = 3): Promise<string[]> {
+export async function getContextResponses(
+	limit: number = 3,
+): Promise<string[]> {
 	const logs = await getLogs(limit);
 	const responses: string[] = [];
 
