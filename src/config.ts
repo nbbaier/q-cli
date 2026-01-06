@@ -76,28 +76,25 @@ export function saveConfig(config: Partial<Config>): void {
 	ensureConfigDir();
 	const configPath = getConfigPath();
 	const existingConfig = loadConfigFile();
-	const mergedConfig = deepMerge(
-		deepMerge(DEFAULT_CONFIG, existingConfig),
-		config,
-	);
+	const mergedConfig = deepMerge(existingConfig, config);
 	writeFileSync(configPath, JSON.stringify(mergedConfig, null, 2));
 }
 
 function deepMerge(
-	target: Config,
+	target: Partial<Config>,
 	source: Partial<Config>,
-): Config {
-	const result: Config = {
+): Partial<Config> {
+	const result: Partial<Config> = {
 		cache: {
-			...target.cache,
+			...(target.cache || {}),
 			...(source.cache || {}),
 		},
 		defaults: {
-			...target.defaults,
+			...(target.defaults || {}),
 			...(source.defaults || {}),
 		},
 		api: {
-			...target.api,
+			...(target.api || {}),
 			...(source.api || {}),
 		},
 	};
