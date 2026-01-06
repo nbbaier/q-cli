@@ -207,7 +207,7 @@ export async function updateCache(
 	cacheId: number,
 	response: string,
 	responseId: number | null,
-	contextResponses: string[] = [],
+	contextHash?: string | null,
 ): Promise<void> {
 	const config = getConfig();
 	const db = await getDb();
@@ -226,7 +226,7 @@ export async function updateCache(
 		.set({
 			response,
 			response_id: responseId,
-			context_hash: contextHash,
+			...(contextHash !== undefined && { context_hash: contextHash }),
 			expires_at: expiresAt,
 		})
 		.where(eq(cacheEntries.id, cacheId));
