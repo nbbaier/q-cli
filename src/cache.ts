@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, lt, sql } from "drizzle-orm";
+import { desc, eq, gt, lt, sql } from "drizzle-orm";
 import { getConfig } from "./config";
 import { getDb } from "./db/index";
 import {
@@ -15,8 +15,26 @@ import {
 	generateEmbedding,
 } from "./embeddings";
 
+/**
+ * Represents the result of a cache lookup.
+ *
+ * The {@link similarity} score reflects how closely the cached entry's
+ * query embedding matches the lookup query's embedding, typically using
+ * cosine similarity in the range [0, 1], where higher values indicate
+ * a closer semantic match.
+ *
+ * Returned by {@link lookupCache} when a suitable cached response is found.
+ */
 export interface CacheMatch {
+	/**
+	 * The cached entry that best matches the lookup query and context.
+	 */
 	entry: SelectCacheEntry;
+	/**
+	 * Similarity score between the lookup query and the cached entry.
+	 * Used to compare against the configured similarity threshold; higher
+	 * values mean a better match.
+	 */
 	similarity: number;
 }
 
@@ -50,9 +68,14 @@ export async function lookupCache(
 	try {
 		queryEmbedding = await generateEmbedding(query);
 	} catch (error) {
-		// If embedding generation fails, skip cache lookup
-		console.error("Failed to generate embedding for cache lookup:", error);
-		return null;
+		// Propagate embedding generation errors to keep behavior consistent with cache storage
+		if (error instanceof Error) {
+			throw new Error(
+				"Failed to generate embedding for cache lookup",
+				{ cause: error } as ErrorOptions,
+			);
+		}
+		throw new Error("Failed to generate embedding for cache lookup");
 	}
 
 	// Generate context hash if we have context
@@ -82,9 +105,22 @@ export async function lookupCache(
 	let bestMatch: CacheMatch | null = null;
 
 	for (const entry of candidateEntries) {
-		const entryEmbedding = bufferToEmbedding(
-			entry.query_embedding as unknown as Buffer,
-		);
+		const rawEmbedding = entry.query_embedding;
+
+		let embeddingBuffer: Buffer | null = null;
+		if (Buffer.isBuffer(rawEmbedding)) {
+			embeddingBuffer = rawEmbedding;
+		} else if (rawEmbedding instanceof Uint8Array) {
+			embeddingBuffer = Buffer.from(rawEmbedding);
+		} else {
+			console.error(
+				"Unexpected type for cache entry query_embedding; skipping entry",
+				{ id: entry.id, type: rawEmbedding === null ? "null" : typeof rawEmbedding },
+			);
+			continue;
+		}
+
+		const entryEmbedding = bufferToEmbedding(embeddingBuffer);
 		const similarity = cosineSimilarity(queryEmbedding, entryEmbedding);
 
 		if (similarity >= threshold) {
@@ -187,7 +223,7 @@ export async function updateCache(
 		.set({
 			response,
 			response_id: responseId,
-			created_at: now,
+
 			expires_at: expiresAt,
 		})
 		.where(eq(cacheEntries.id, cacheId));
