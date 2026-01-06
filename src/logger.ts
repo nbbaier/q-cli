@@ -14,6 +14,10 @@ export function getLastLogId(): number | null {
 	return lastLogId;
 }
 
+export function setLastLogId(id: number | null): void {
+	lastLogId = id;
+}
+
 function serializeError(error: unknown) {
 	if (error instanceof Error) {
 		return {

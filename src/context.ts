@@ -31,3 +31,21 @@ export async function getContextMessages(
 
 	return messages;
 }
+
+/**
+ * Get only the response texts for context hash generation
+ * Used for cache context matching
+ */
+export async function getContextResponses(limit: number = 3): Promise<string[]> {
+	const logs = await getLogs(limit);
+	const responses: string[] = [];
+
+	// Reverse to get chronological order (oldest first)
+	for (const log of logs.reverse()) {
+		if (log.response) {
+			responses.push(log.response);
+		}
+	}
+
+	return responses;
+}
