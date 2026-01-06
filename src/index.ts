@@ -19,7 +19,11 @@ import {
 	isCacheConfigured,
 	setCacheEnabled,
 } from "./config";
-import { detectsContext, getContextMessages, getContextResponses } from "./context";
+import {
+	detectsContext,
+	getContextMessages,
+	getContextResponses,
+} from "./context";
 import { handleLogsCommand, updateLogCopied } from "./db/queries";
 import { getLastLogId, logger, setLastLogId } from "./logger";
 
@@ -101,7 +105,8 @@ async function handleQuery(
 			: detectsContext(query);
 
 	const contextLimit =
-		explicitContextLimit ?? (shouldIncludeContext ? config.defaults.context_limit : 0);
+		explicitContextLimit ??
+		(shouldIncludeContext ? config.defaults.context_limit : 0);
 
 	// Fetch context if needed
 	let contextMessages: ModelMessage[] = [];
@@ -149,7 +154,8 @@ async function handleQuery(
 		// Show cache info
 		if (options.verbose) {
 			const age = Math.floor(
-				(Date.now() - cacheMatch.entry.created_at.getTime()) / (1000 * 60 * 60 * 24),
+				(Date.now() - cacheMatch.entry.created_at.getTime()) /
+					(1000 * 60 * 60 * 24),
 			);
 			writeAndCount(
 				chalk.gray(
@@ -351,7 +357,12 @@ async function handleRegenerateQuery(
 	if (config.cache.enabled) {
 		const logId = getLastLogId();
 		try {
-			await updateCache(cacheMatch.entry.id, message, logId);
+			await updateCache(
+				cacheMatch.entry.id,
+				message,
+				logId,
+				cacheMatch.entry.context_hash,
+			);
 		} catch {
 			// Non-fatal
 		}
@@ -464,9 +475,7 @@ program
 	});
 
 // Cache management subcommand
-const cacheCommand = program
-	.command("cache")
-	.description("Manage query cache");
+const cacheCommand = program.command("cache").description("Manage query cache");
 
 cacheCommand
 	.command("list")
@@ -492,7 +501,10 @@ cacheCommand
 	.argument("[id]", "Clear specific entry by ID")
 	.action(async (id, options) => {
 		const { handleCacheClear } = await import("./cache-commands");
-		await handleCacheClear(id ? Number.parseInt(id, 10) : undefined, options.expired);
+		await handleCacheClear(
+			id ? Number.parseInt(id, 10) : undefined,
+			options.expired,
+		);
 	});
 
 program.parse();
