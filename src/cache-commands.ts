@@ -69,10 +69,16 @@ export async function handleCacheStats(): Promise<void> {
 
 	console.log(`  ${chalk.cyan("Total entries:")}     ${stats.totalEntries}`);
 	console.log(`  ${chalk.cyan("Total hits:")}        ${stats.totalHits}`);
-	console.log(`  ${chalk.cyan("Storage size:")}      ${formatBytes(stats.storageSize)}`);
+	console.log(
+		`  ${chalk.cyan("Storage size:")}      ${formatBytes(stats.storageSize)}`,
+	);
 	console.log(`  ${chalk.cyan("Expired entries:")}   ${stats.expiredCount}`);
-	console.log(`  ${chalk.cyan("Oldest entry:")}      ${formatDate(stats.oldestEntry)}`);
-	console.log(`  ${chalk.cyan("Newest entry:")}      ${formatDate(stats.newestEntry)}`);
+	console.log(
+		`  ${chalk.cyan("Oldest entry:")}      ${formatDate(stats.oldestEntry)}`,
+	);
+	console.log(
+		`  ${chalk.cyan("Newest entry:")}      ${formatDate(stats.newestEntry)}`,
+	);
 
 	// Calculate hit rate if we have data
 	if (stats.totalEntries > 0) {
@@ -81,9 +87,15 @@ export async function handleCacheStats(): Promise<void> {
 	}
 
 	console.log(chalk.bold("\nConfiguration:\n"));
-	console.log(`  ${chalk.cyan("Cache enabled:")}     ${config.cache.enabled ? "Yes" : "No"}`);
-	console.log(`  ${chalk.cyan("Similarity:")}        ${(config.cache.similarity_threshold * 100).toFixed(0)}%`);
-	console.log(`  ${chalk.cyan("TTL:")}               ${config.cache.expiry_days} days`);
+	console.log(
+		`  ${chalk.cyan("Cache enabled:")}     ${config.cache.enabled ? "Yes" : "No"}`,
+	);
+	console.log(
+		`  ${chalk.cyan("Similarity:")}        ${(config.cache.similarity_threshold * 100).toFixed(0)}%`,
+	);
+	console.log(
+		`  ${chalk.cyan("TTL:")}               ${config.cache.expiry_days} days`,
+	);
 	console.log(`  ${chalk.cyan("Config path:")}       ${getConfigPath()}`);
 
 	console.log();
