@@ -72,11 +72,7 @@ function loadConfigFile(): Partial<Config> {
 	}
 }
 
-export function saveConfig(config: {
-	cache?: Partial<CacheConfig>;
-	defaults?: Partial<DefaultsConfig>;
-	api?: Partial<ApiConfig>;
-}): void {
+export function saveConfig(config: Partial<Config>): void {
 	ensureConfigDir();
 	const configPath = getConfigPath();
 	const existingConfig = loadConfigFile();
@@ -86,29 +82,37 @@ export function saveConfig(config: {
 	});
 }
 
-function deepMerge<T extends Partial<Config>>(
-	target: T,
-	source: {
-		cache?: Partial<CacheConfig>;
-		defaults?: Partial<DefaultsConfig>;
-		api?: Partial<ApiConfig>;
-	},
-): T {
+function deepMerge(
+	target: Partial<Config>,
+	source: Partial<Config>,
+): Partial<Config> {
 	return {
 		...target,
-		cache: {
-			...target.cache,
-			...(source.cache || {}),
-		},
-		defaults: {
-			...target.defaults,
-			...(source.defaults || {}),
-		},
-		api: {
-			...target.api,
-			...(source.api || {}),
-		},
-	} as T;
+		...(target.cache || source.cache
+			? {
+					cache: {
+						...(target.cache || {}),
+						...(source.cache || {}),
+					},
+				}
+			: {}),
+		...(target.defaults || source.defaults
+			? {
+					defaults: {
+						...(target.defaults || {}),
+						...(source.defaults || {}),
+					},
+				}
+			: {}),
+		...(target.api || source.api
+			? {
+					api: {
+						...(target.api || {}),
+						...(source.api || {}),
+					},
+				}
+			: {}),
+	};
 }
 
 // Cache for loaded config
