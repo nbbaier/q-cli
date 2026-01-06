@@ -9,7 +9,7 @@ export async function insertLog(log: InsertLog): Promise<SelectLog[]> {
 	return await db.insert(responses).values(log).returning();
 }
 
-async function getLogs(limit: number = 3): Promise<SelectLog[]> {
+export async function getLogs(limit: number = 3): Promise<SelectLog[]> {
 	const db = await getDb();
 	return await db
 		.select()

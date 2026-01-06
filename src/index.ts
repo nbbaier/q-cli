@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 import * as readline from "node:readline";
 import { openai } from "@ai-sdk/openai";
-import { Command } from "@commander-js/extra-typings";
 import { type ModelMessage, streamText, wrapLanguageModel } from "ai";
 import chalk from "chalk";
 import clipboard from "clipboardy";
+import { Command } from "commander";
 import ora from "ora";
+import { detectsContext, getContextMessages } from "./context";
 import { handleLogsCommand, updateLogCopied } from "./db/queries";
 import { getLastLogId, logger } from "./logger";
 
@@ -15,7 +16,7 @@ const model = wrapLanguageModel({
 });
 
 const SYSTEM_PROMPT =
-	"You are a terminal assistant. Turn the natural language instructions into a terminal command. By default always only output code, and in a code block. DO NOT OUTPUT ADDITIONAL REMARKS ABOUT THE CODE YOU OUTPUT. Do not repeat the question the users asks. Do not add explanations for your code. Do not output any non-code words at all. Just output the code. Short is better. However, if the user is clearly asking a general question then answer it very briefly and well. Consider when the user request references a previous request.";
+	"You are a terminal assistant. Turn natural language instructions into terminal commands. When the user references previous interactions (e.g., 'modify last command', 'run that again'), use the conversation history to understand the context. By default always only output code, and in a code block. DO NOT OUTPUT ADDITIONAL REMARKS ABOUT THE CODE YOU OUTPUT. Do not repeat the question the users asks. Do not add explanations for your code. Do not output any non-code words at all. Just output the code. Short is better. However, if the user is clearly asking a general question then answer it very briefly and well.";
 
 const FEW_SHOT_MESSAGES: ModelMessage[] = [
 	{ role: "user", content: "get the current time from some website" },
@@ -27,7 +28,10 @@ const FEW_SHOT_MESSAGES: ModelMessage[] = [
 	{ role: "assistant", content: 'echo "hi"' },
 ];
 
-async function handleQuery(query: string): Promise<void> {
+async function handleQuery(
+	query: string,
+	explicitContextLimit?: number,
+): Promise<void> {
 	let printedLines = 0;
 
 	function writeAndCount(text: string) {
@@ -35,9 +39,24 @@ async function handleQuery(query: string): Promise<void> {
 		process.stdout.write(text);
 	}
 
+	// Determine context limit
+	const shouldIncludeContext =
+		explicitContextLimit !== undefined
+			? explicitContextLimit > 0
+			: detectsContext(query);
+
+	const contextLimit = explicitContextLimit ?? (shouldIncludeContext ? 3 : 0);
+
+	// Fetch context if needed
+	let contextMessages: ModelMessage[] = [];
+	if (contextLimit > 0) {
+		contextMessages = await getContextMessages(contextLimit);
+	}
+
 	const messages: ModelMessage[] = [
 		{ role: "system", content: SYSTEM_PROMPT },
 		...FEW_SHOT_MESSAGES,
+		...contextMessages, // Insert context here
 		{ role: "user", content: query },
 	];
 
@@ -109,13 +128,19 @@ const program = new Command()
 	.name("q")
 	.description("Terminal AI assistant")
 	.argument("[query...]", "Natural language query")
-	.action(async (queryParts) => {
+	.option(
+		"-c, --context <number>",
+		"Include N previous interactions for context",
+		"0",
+	)
+	.action(async (queryParts: string[], options: { context: string }) => {
 		const query = queryParts.join(" ");
 		if (!query) {
 			console.error("No query provided");
 			process.exit(1);
 		}
-		await handleQuery(query);
+		const contextLimit = Number.parseInt(options.context, 10);
+		await handleQuery(query, contextLimit);
 	});
 
 program
