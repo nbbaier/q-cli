@@ -1,9 +1,8 @@
 import { createHash } from "node:crypto";
 import { openai } from "@ai-sdk/openai";
-import { embedMany, embed } from "ai";
+import { embed, embedMany } from "ai";
 
 const EMBEDDING_MODEL = "text-embedding-3-small";
-const EMBEDDING_DIMENSIONS = 1536; // text-embedding-3-small produces 1536-dimensional vectors
 
 // Create the embedding model
 const embeddingModel = openai.textEmbeddingModel(EMBEDDING_MODEL);
@@ -56,9 +55,7 @@ export function bufferToEmbedding(buffer: Buffer): Float32Array {
  */
 export function cosineSimilarity(a: Float32Array, b: Float32Array): number {
 	if (a.length !== b.length) {
-		throw new Error(
-			`Embedding dimension mismatch: ${a.length} vs ${b.length}`,
-		);
+		throw new Error(`Embedding dimension mismatch: ${a.length} vs ${b.length}`);
 	}
 
 	let dotProduct = 0;
@@ -89,28 +86,5 @@ export function generateContextHash(responseTexts: string[]): string {
 		return "";
 	}
 	const combined = responseTexts.join("\n---\n");
-	return createHash("sha256").update(combined).digest("hex").slice(0, 16);
-}
-
-/**
- * Find the best matching embedding from a list
- * Returns the index and similarity score, or null if no match exceeds threshold
- */
-export function findBestMatch(
-	queryEmbedding: Float32Array,
-	candidates: { embedding: Float32Array; index: number }[],
-	threshold: number,
-): { index: number; similarity: number } | null {
-	let bestMatch: { index: number; similarity: number } | null = null;
-
-	for (const candidate of candidates) {
-		const similarity = cosineSimilarity(queryEmbedding, candidate.embedding);
-		if (similarity >= threshold) {
-			if (!bestMatch || similarity > bestMatch.similarity) {
-				bestMatch = { index: candidate.index, similarity };
-			}
-		}
-	}
-
-	return bestMatch;
+	return createHash("sha256").update(combined).digest("hex");
 }

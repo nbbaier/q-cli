@@ -76,8 +76,13 @@ export function saveConfig(config: Partial<Config>): void {
 	ensureConfigDir();
 	const configPath = getConfigPath();
 	const existingConfig = loadConfigFile();
-	const mergedConfig = deepMerge(existingConfig, config);
-	writeFileSync(configPath, JSON.stringify(mergedConfig, null, 2));
+	const mergedConfig = deepMerge(
+		deepMerge(DEFAULT_CONFIG, existingConfig),
+		config,
+	);
+	writeFileSync(configPath, JSON.stringify(mergedConfig, null, 2), {
+		mode: 0o600,
+	});
 }
 
 function deepMerge(
