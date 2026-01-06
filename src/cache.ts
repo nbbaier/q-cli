@@ -125,18 +125,29 @@ export async function lookupCache(
 
 		if (similarity >= threshold) {
 			// For context-dependent queries, prefer exact context match
-			if (contextHash && entry.context_hash === contextHash) {
-				// Exact context match - prioritize this
-				if (
-					!bestMatch ||
-					bestMatch.entry.context_hash !== contextHash ||
-					similarity > bestMatch.similarity
-				) {
+			const isExactContextMatch =
+				contextHash && entry.context_hash === contextHash;
+			const bestMatchIsExactContext =
+				bestMatch?.entry.context_hash === contextHash;
+
+			if (!bestMatch) {
+				// No previous match, use this one
+				bestMatch = { entry, similarity };
+			} else if (isExactContextMatch && !bestMatchIsExactContext) {
+				// Current entry is exact context match, best match is not - always prefer exact match
+				bestMatch = { entry, similarity };
+			} else if (isExactContextMatch && bestMatchIsExactContext) {
+				// Both are exact context matches - prefer higher similarity
+				if (similarity > bestMatch.similarity) {
 					bestMatch = { entry, similarity };
 				}
-			} else if (!bestMatch || similarity > bestMatch.similarity) {
-				bestMatch = { entry, similarity };
+			} else if (!isExactContextMatch && !bestMatchIsExactContext) {
+				// Neither are exact context matches - prefer higher similarity
+				if (similarity > bestMatch.similarity) {
+					bestMatch = { entry, similarity };
+				}
 			}
+			// If current entry is NOT exact match but bestMatch IS exact match, keep bestMatch
 		}
 	}
 
