@@ -381,7 +381,12 @@ async function handleRegenerateQuery(
 	if (config.cache.enabled) {
 		const logId = getLastLogId();
 		try {
-			await updateCache(cacheMatch.entry.id, message, logId);
+			await updateCache(
+				cacheMatch.entry.id,
+				message,
+				logId,
+				cacheMatch.entry.context_hash,
+			);
 		} catch {
 			// Non-fatal
 		}
