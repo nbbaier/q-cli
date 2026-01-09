@@ -6,6 +6,8 @@ import chalk from "chalk";
 import clipboard from "clipboardy";
 import { Command } from "commander";
 import ora from "ora";
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import {
 	type CacheMatch,
 	logCacheHit,
@@ -26,6 +28,18 @@ import {
 } from "./context";
 import { handleLogsCommand, updateLogCopied } from "./db/queries";
 import { getLastLogId, logger, setLastLogId } from "./logger";
+||||||| Stash base
+||||||| Stash base
+=======
+import { detectsContext, getContextMessages } from "./context";
+>>>>>>> Stashed changes
+import { handleLogsCommand } from "./db/queries";
+import { logger } from "./logger";
+=======
+import { detectsContext, getContextMessages } from "./context";
+import { handleLogsCommand } from "./db/queries";
+import { logger } from "./logger";
+>>>>>>> Stashed changes
 
 const model = wrapLanguageModel({
 	model: openai("gpt-4.1-mini"),
@@ -45,6 +59,8 @@ const FEW_SHOT_MESSAGES: ModelMessage[] = [
 	{ role: "assistant", content: 'echo "hi"' },
 ];
 
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
 /**
  * Query-specific options that extend the base {@link CLIOptions}.
  *
@@ -107,6 +123,22 @@ async function handleQuery(
 	options: QueryOptions = {},
 ): Promise<void> {
 	const config = getEffectiveConfig(options);
+||||||| Stash base
+async function handleQuery(query: string): Promise<void> {
+=======
+async function handleQuery(
+	query: string,
+	explicitContextLimit?: number,
+): Promise<void> {
+>>>>>>> Stashed changes
+||||||| Stash base
+async function handleQuery(query: string): Promise<void> {
+=======
+async function handleQuery(
+	query: string,
+	explicitContextLimit?: number,
+): Promise<void> {
+>>>>>>> Stashed changes
 	let printedLines = 0;
 	let cacheMatch: CacheMatch | null = null;
 
@@ -115,6 +147,8 @@ async function handleQuery(
 		process.stdout.write(text);
 	}
 
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
 	// First-run experience: prompt for cache preference
 	if (config.cache.enabled && !isCacheConfigured()) {
 		const enabled = await promptForCachePreference();
@@ -219,10 +253,54 @@ async function handleQuery(
 	}
 
 	// No cache hit - generate fresh response
+||||||| Stash base
+=======
+	// Determine context limit
+	const shouldIncludeContext =
+		explicitContextLimit !== undefined
+			? explicitContextLimit > 0
+			: detectsContext(query);
+
+	const contextLimit = explicitContextLimit ?? (shouldIncludeContext ? 3 : 0);
+
+	// Fetch context if needed
+	let contextMessages: ModelMessage[] = [];
+	if (contextLimit > 0) {
+		contextMessages = await getContextMessages(contextLimit);
+	}
+
+>>>>>>> Stashed changes
+||||||| Stash base
+=======
+	// Determine context limit
+	const shouldIncludeContext =
+		explicitContextLimit !== undefined
+			? explicitContextLimit > 0
+			: detectsContext(query);
+
+	const contextLimit = explicitContextLimit ?? (shouldIncludeContext ? 3 : 0);
+
+	// Fetch context if needed
+	let contextMessages: ModelMessage[] = [];
+	if (contextLimit > 0) {
+		contextMessages = await getContextMessages(contextLimit);
+	}
+
+>>>>>>> Stashed changes
 	const messages: ModelMessage[] = [
 		{ role: "system", content: SYSTEM_PROMPT },
 		...FEW_SHOT_MESSAGES,
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
 		...contextMessages,
+||||||| Stash base
+=======
+		...contextMessages, // Insert context here
+>>>>>>> Stashed changes
+||||||| Stash base
+=======
+		...contextMessages, // Insert context here
+>>>>>>> Stashed changes
 		{ role: "user", content: query },
 	];
 
@@ -457,6 +535,8 @@ const program = new Command()
 	.name("q")
 	.description("Terminal AI assistant")
 	.argument("[query...]", "Natural language query")
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
 	.option(
 		"-c, --context <number>",
 		"Include N previous interactions for context",
@@ -489,6 +569,42 @@ const program = new Command()
 			});
 		},
 	);
+||||||| Stash base
+	.action(async (queryParts) => {
+||||||| Stash base
+	.action(async (queryParts) => {
+=======
+	.option(
+		"-c, --context <number>",
+		"Include N previous interactions for context",
+		"0",
+	)
+	.action(async (queryParts: string[], options: { context: string }) => {
+>>>>>>> Stashed changes
+		const query = queryParts.join(" ");
+		if (!query) {
+			console.error("No query provided");
+			process.exit(1);
+		}
+		const contextLimit = Number.parseInt(options.context, 10);
+		await handleQuery(query, contextLimit);
+	});
+=======
+	.option(
+		"-c, --context <number>",
+		"Include N previous interactions for context",
+		"0",
+	)
+	.action(async (queryParts: string[], options: { context: string }) => {
+		const query = queryParts.join(" ");
+		if (!query) {
+			console.error("No query provided");
+			process.exit(1);
+		}
+		const contextLimit = Number.parseInt(options.context, 10);
+		await handleQuery(query, contextLimit);
+	});
+>>>>>>> Stashed changes
 
 program
 	.command("logs")
