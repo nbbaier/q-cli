@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 import * as readline from "node:readline";
 import { openai } from "@ai-sdk/openai";
-import { type ModelMessage, streamText, wrapLanguageModel } from "ai";
+import {
+	type LanguageModelV2,
+	type ModelMessage,
+	streamText,
+	wrapLanguageModel,
+} from "ai";
 import chalk from "chalk";
 import clipboard from "clipboardy";
 import { Command } from "commander";
 import ora from "ora";
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 import {
 	type CacheMatch,
 	logCacheHit,
@@ -27,24 +30,21 @@ import {
 	getContextResponses,
 } from "./context";
 import { handleLogsCommand, updateLogCopied } from "./db/queries";
+import { formatError } from "./errors";
 import { getLastLogId, logger, setLastLogId } from "./logger";
-||||||| Stash base
-||||||| Stash base
-=======
-import { detectsContext, getContextMessages } from "./context";
->>>>>>> Stashed changes
-import { handleLogsCommand } from "./db/queries";
-import { logger } from "./logger";
-=======
-import { detectsContext, getContextMessages } from "./context";
-import { handleLogsCommand } from "./db/queries";
-import { logger } from "./logger";
->>>>>>> Stashed changes
 
-const model = wrapLanguageModel({
-	model: openai("gpt-4.1-mini"),
-	middleware: [logger],
-});
+/**
+ * Create a wrapped language model with logging middleware
+ */
+function createModel(modelId: string): LanguageModelV2 {
+	return wrapLanguageModel({
+		model: openai(modelId),
+		middleware: [logger],
+	});
+}
+
+// Default model (can be overridden by --model flag)
+const DEFAULT_MODEL = "gpt-4.1-mini";
 
 const SYSTEM_PROMPT =
 	"You are a terminal assistant. Turn natural language instructions into terminal commands. When the user references previous interactions (e.g., 'modify last command', 'run that again'), use the conversation history to understand the context. By default always only output code, and in a code block. DO NOT OUTPUT ADDITIONAL REMARKS ABOUT THE CODE YOU OUTPUT. Do not repeat the question the users asks. Do not add explanations for your code. Do not output any non-code words at all. Just output the code. Short is better. However, if the user is clearly asking a general question then answer it very briefly and well.";
@@ -59,8 +59,6 @@ const FEW_SHOT_MESSAGES: ModelMessage[] = [
 	{ role: "assistant", content: 'echo "hi"' },
 ];
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 /**
  * Query-specific options that extend the base {@link CLIOptions}.
  *
@@ -89,6 +87,11 @@ interface QueryOptions extends CLIOptions {
 	 *   no write).
 	 */
 	refresh?: boolean;
+	/**
+	 * Override the model to use for this query.
+	 * If not specified, uses the model from config or the default (gpt-4.1-mini).
+	 */
+	model?: string;
 }
 
 async function promptForCachePreference(): Promise<boolean> {
@@ -123,22 +126,8 @@ async function handleQuery(
 	options: QueryOptions = {},
 ): Promise<void> {
 	const config = getEffectiveConfig(options);
-||||||| Stash base
-async function handleQuery(query: string): Promise<void> {
-=======
-async function handleQuery(
-	query: string,
-	explicitContextLimit?: number,
-): Promise<void> {
->>>>>>> Stashed changes
-||||||| Stash base
-async function handleQuery(query: string): Promise<void> {
-=======
-async function handleQuery(
-	query: string,
-	explicitContextLimit?: number,
-): Promise<void> {
->>>>>>> Stashed changes
+	const modelId = options.model ?? config.defaults.model ?? DEFAULT_MODEL;
+	const model = createModel(modelId);
 	let printedLines = 0;
 	let cacheMatch: CacheMatch | null = null;
 
@@ -147,8 +136,6 @@ async function handleQuery(
 		process.stdout.write(text);
 	}
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 	// First-run experience: prompt for cache preference
 	if (config.cache.enabled && !isCacheConfigured()) {
 		const enabled = await promptForCachePreference();
@@ -253,72 +240,37 @@ async function handleQuery(
 	}
 
 	// No cache hit - generate fresh response
-||||||| Stash base
-=======
-	// Determine context limit
-	const shouldIncludeContext =
-		explicitContextLimit !== undefined
-			? explicitContextLimit > 0
-			: detectsContext(query);
-
-	const contextLimit = explicitContextLimit ?? (shouldIncludeContext ? 3 : 0);
-
-	// Fetch context if needed
-	let contextMessages: ModelMessage[] = [];
-	if (contextLimit > 0) {
-		contextMessages = await getContextMessages(contextLimit);
-	}
-
->>>>>>> Stashed changes
-||||||| Stash base
-=======
-	// Determine context limit
-	const shouldIncludeContext =
-		explicitContextLimit !== undefined
-			? explicitContextLimit > 0
-			: detectsContext(query);
-
-	const contextLimit = explicitContextLimit ?? (shouldIncludeContext ? 3 : 0);
-
-	// Fetch context if needed
-	let contextMessages: ModelMessage[] = [];
-	if (contextLimit > 0) {
-		contextMessages = await getContextMessages(contextLimit);
-	}
-
->>>>>>> Stashed changes
 	const messages: ModelMessage[] = [
 		{ role: "system", content: SYSTEM_PROMPT },
 		...FEW_SHOT_MESSAGES,
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 		...contextMessages,
-||||||| Stash base
-=======
-		...contextMessages, // Insert context here
->>>>>>> Stashed changes
-||||||| Stash base
-=======
-		...contextMessages, // Insert context here
->>>>>>> Stashed changes
 		{ role: "user", content: query },
 	];
 
 	const spinner = ora("Generating response...").start();
-	const result = streamText({ model, messages });
 
 	let message = "";
-	for await (const chunk of result.fullStream) {
-		if (chunk.type === "text-delta") {
-			if (spinner.isSpinning) {
-				spinner.stop();
-				writeAndCount("\n    ");
+	try {
+		const result = streamText({ model, messages });
+
+		for await (const chunk of result.fullStream) {
+			if (chunk.type === "text-delta") {
+				if (spinner.isSpinning) {
+					spinner.stop();
+					writeAndCount("\n    ");
+				}
+				const text = (chunk as { text: string }).text;
+				const indentedPart = text.replace(/\n/g, "\n   ");
+				message += text;
+				writeAndCount(indentedPart);
 			}
-			const text = (chunk as { text: string }).text;
-			const indentedPart = text.replace(/\n/g, "\n   ");
-			message += text;
-			writeAndCount(indentedPart);
 		}
+	} catch (error) {
+		if (spinner.isSpinning) {
+			spinner.stop();
+		}
+		console.error(formatError(error));
+		process.exit(1);
 	}
 
 	// Store in cache (unless --no-cache)
@@ -430,6 +382,8 @@ async function handleRegenerateQuery(
 	_contextResponses: string[],
 ): Promise<void> {
 	const config = getEffectiveConfig(options);
+	const modelId = options.model ?? config.defaults.model ?? DEFAULT_MODEL;
+	const model = createModel(modelId);
 	let printedLines = 0;
 
 	function writeAndCount(text: string) {
@@ -445,20 +399,29 @@ async function handleRegenerateQuery(
 	];
 
 	const spinner = ora("Regenerating response...").start();
-	const result = streamText({ model, messages });
 
 	let message = "";
-	for await (const chunk of result.fullStream) {
-		if (chunk.type === "text-delta") {
-			if (spinner.isSpinning) {
-				spinner.stop();
-				writeAndCount("\n    ");
+	try {
+		const result = streamText({ model, messages });
+
+		for await (const chunk of result.fullStream) {
+			if (chunk.type === "text-delta") {
+				if (spinner.isSpinning) {
+					spinner.stop();
+					writeAndCount("\n    ");
+				}
+				const text = (chunk as { text: string }).text;
+				const indentedPart = text.replace(/\n/g, "\n   ");
+				message += text;
+				writeAndCount(indentedPart);
 			}
-			const text = (chunk as { text: string }).text;
-			const indentedPart = text.replace(/\n/g, "\n   ");
-			message += text;
-			writeAndCount(indentedPart);
 		}
+	} catch (error) {
+		if (spinner.isSpinning) {
+			spinner.stop();
+		}
+		console.error(formatError(error));
+		process.exit(1);
 	}
 
 	// Update cache with new response
@@ -535,8 +498,6 @@ const program = new Command()
 	.name("q")
 	.description("Terminal AI assistant")
 	.argument("[query...]", "Natural language query")
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 	.option(
 		"-c, --context <number>",
 		"Include N previous interactions for context",
@@ -545,6 +506,10 @@ const program = new Command()
 	.option("--no-cache", "Skip cache lookup, force API call, don't update cache")
 	.option("--refresh", "Skip cache lookup, force API call, update cache")
 	.option("-v, --verbose", "Show verbose output including cache info")
+	.option(
+		"-m, --model <model>",
+		"Model to use (e.g., gpt-4.1-mini, gpt-4o, gpt-4-turbo)",
+	)
 	.action(
 		async (
 			queryParts: string[],
@@ -553,6 +518,7 @@ const program = new Command()
 				cache: boolean;
 				refresh: boolean;
 				verbose: boolean;
+				model?: string;
 			},
 		) => {
 			const query = queryParts.join(" ");
@@ -566,45 +532,10 @@ const program = new Command()
 				noCache: !options.cache,
 				refresh: options.refresh,
 				verbose: options.verbose,
+				model: options.model,
 			});
 		},
 	);
-||||||| Stash base
-	.action(async (queryParts) => {
-||||||| Stash base
-	.action(async (queryParts) => {
-=======
-	.option(
-		"-c, --context <number>",
-		"Include N previous interactions for context",
-		"0",
-	)
-	.action(async (queryParts: string[], options: { context: string }) => {
->>>>>>> Stashed changes
-		const query = queryParts.join(" ");
-		if (!query) {
-			console.error("No query provided");
-			process.exit(1);
-		}
-		const contextLimit = Number.parseInt(options.context, 10);
-		await handleQuery(query, contextLimit);
-	});
-=======
-	.option(
-		"-c, --context <number>",
-		"Include N previous interactions for context",
-		"0",
-	)
-	.action(async (queryParts: string[], options: { context: string }) => {
-		const query = queryParts.join(" ");
-		if (!query) {
-			console.error("No query provided");
-			process.exit(1);
-		}
-		const contextLimit = Number.parseInt(options.context, 10);
-		await handleQuery(query, contextLimit);
-	});
->>>>>>> Stashed changes
 
 program
 	.command("logs")

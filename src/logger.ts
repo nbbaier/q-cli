@@ -43,7 +43,6 @@ export const logger: LanguageModelV2Middleware = {
 			params.prompt.find((p) => p.role === "system")?.content || undefined;
 		const prompt = params.prompt.findLast((p) => p.role !== "system")
 			?.content[0] as LanguageModelV2TextPart;
-		console.log(prompt);
 		const startTime = performance.now();
 		const result = await doGenerate();
 		const durationMs = Math.round(performance.now() - startTime);
