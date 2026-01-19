@@ -213,19 +213,17 @@ export async function storeCache(
 
 /**
  * Update an existing cache entry with a new response
+ * Note: The context_hash is preserved from the original entry (passed in as contextHash)
+ * since the context hasn't changed - only the response is being regenerated.
  */
 export async function updateCache(
 	cacheId: number,
 	response: string,
 	responseId: number | null,
-	_contextHash?: string | null,
+	contextHash?: string | null,
 ): Promise<void> {
 	const config = getConfig();
 	const db = await getDb();
-
-	// Generate context hash if we have context
-	const contextHash =
-		contextResponses.length > 0 ? generateContextHash(contextResponses) : null;
 
 	const now = new Date();
 	const expiresAt = new Date(
@@ -237,6 +235,7 @@ export async function updateCache(
 		.set({
 			response,
 			response_id: responseId,
+			// Preserve the original context_hash (passed from the cache entry being regenerated)
 			...(contextHash !== undefined && { context_hash: contextHash }),
 			expires_at: expiresAt,
 		})

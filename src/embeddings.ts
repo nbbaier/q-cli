@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { openai } from "@ai-sdk/openai";
 import { embed, embedMany } from "ai";
+import { withRetry } from "./retry";
 
 const EMBEDDING_MODEL = "text-embedding-3-small";
 
@@ -9,25 +10,41 @@ const embeddingModel = openai.textEmbeddingModel(EMBEDDING_MODEL);
 
 /**
  * Generate embedding for a single query
+ * Includes automatic retry for transient failures
  */
 export async function generateEmbedding(text: string): Promise<Float32Array> {
-	const { embedding } = await embed({
-		model: embeddingModel,
-		value: text,
-	});
+	const { embedding } = await withRetry(
+		() =>
+			embed({
+				model: embeddingModel,
+				value: text,
+			}),
+		{
+			maxRetries: 3,
+			initialDelayMs: 1000,
+		},
+	);
 	return new Float32Array(embedding);
 }
 
 /**
  * Generate embeddings for multiple texts (batched)
+ * Includes automatic retry for transient failures
  */
 export async function generateEmbeddings(
 	texts: string[],
 ): Promise<Float32Array[]> {
-	const { embeddings } = await embedMany({
-		model: embeddingModel,
-		values: texts,
-	});
+	const { embeddings } = await withRetry(
+		() =>
+			embedMany({
+				model: embeddingModel,
+				values: texts,
+			}),
+		{
+			maxRetries: 3,
+			initialDelayMs: 1000,
+		},
+	);
 	return embeddings.map((e) => new Float32Array(e));
 }
 
