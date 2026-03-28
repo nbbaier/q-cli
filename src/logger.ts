@@ -1,11 +1,12 @@
 import type {
-	LanguageModelV2Middleware,
-	LanguageModelV2StreamPart,
-	LanguageModelV2TextPart,
+	LanguageModelV3Middleware,
+	LanguageModelV3StreamPart,
+	LanguageModelV3Text,
+	LanguageModelV3TextPart,
 } from "@ai-sdk/provider";
 import { insertLog } from "./db/queries";
 
-const argv = typeof Bun !== "undefined" ? Bun.argv : process.argv;
+const argv = typeof globalThis !== "undefined" && "Bun" in globalThis ? (globalThis as Record<string, any>).Bun.argv : process.argv;
 const logRawStream = argv.includes("--log-raw-stream");
 
 let lastLogId: number | null = null;
@@ -30,7 +31,8 @@ function serializeError(error: unknown) {
 	return { value: error };
 }
 
-export const logger: LanguageModelV2Middleware = {
+export const logger: LanguageModelV3Middleware = {
+	specificationVersion: "v3",
 	transformParams: async ({ type, params }) => {
 		if (type === "stream" && logRawStream) {
 			return { ...params, includeRawChunks: true };
@@ -42,15 +44,22 @@ export const logger: LanguageModelV2Middleware = {
 		const system =
 			params.prompt.find((p) => p.role === "system")?.content || undefined;
 		const prompt = params.prompt.findLast((p) => p.role !== "system")
-			?.content[0] as LanguageModelV2TextPart;
+			?.content[0] as LanguageModelV3TextPart;
 		const startTime = performance.now();
 		const result = await doGenerate();
 		const durationMs = Math.round(performance.now() - startTime);
 		const datetimeUtc = new Date(performance.timeOrigin + performance.now());
 
-		const response = (result.content as LanguageModelV2TextPart[])
+		const response = (result.content as LanguageModelV3Text[])
 			.map((c) => c.text)
 			.join("");
+
+		const inputTokens = result.usage?.inputTokens?.total;
+		const outputTokens = result.usage?.outputTokens?.total;
+		const totalTokens =
+			inputTokens != null && outputTokens != null
+				? inputTokens + outputTokens
+				: undefined;
 
 		const logs = await insertLog({
 			model: model.modelId,
@@ -62,9 +71,9 @@ export const logger: LanguageModelV2Middleware = {
 			response_json: result.response?.body || undefined,
 			duration_ms: durationMs,
 			datetime_utc: datetimeUtc,
-			input_tokens: result.usage?.inputTokens,
-			output_tokens: result.usage?.outputTokens,
-			total_tokens: result.usage?.totalTokens,
+			input_tokens: inputTokens,
+			output_tokens: outputTokens,
+			total_tokens: totalTokens,
 		});
 
 		if (logs[0]?.id) {
@@ -78,7 +87,7 @@ export const logger: LanguageModelV2Middleware = {
 		const system =
 			params.prompt.find((p) => p.role === "system")?.content || undefined;
 		const prompt = params.prompt.findLast((p) => p.role !== "system")
-			?.content[0] as LanguageModelV2TextPart;
+			?.content[0] as LanguageModelV3TextPart;
 
 		const startTime = performance.now();
 		const { stream, ...rest } = await doStream();
@@ -93,10 +102,13 @@ export const logger: LanguageModelV2Middleware = {
 			| { id?: string; timestamp?: Date; modelId?: string }
 			| undefined;
 		let warnings: unknown[] | undefined;
-		let finishReason: string | undefined;
+		let finishReason: unknown | undefined;
 		let providerMetadata: unknown | undefined;
 		let usage:
-			| { inputTokens?: number; outputTokens?: number; totalTokens?: number }
+			| {
+					inputTokens?: { total?: number };
+					outputTokens?: { total?: number };
+			  }
 			| undefined;
 
 		const toolCalls: unknown[] = [];
@@ -105,8 +117,8 @@ export const logger: LanguageModelV2Middleware = {
 		const rawChunks: unknown[] = [];
 
 		const transformStream = new TransformStream<
-			LanguageModelV2StreamPart,
-			LanguageModelV2StreamPart
+			LanguageModelV3StreamPart,
+			LanguageModelV3StreamPart
 		>({
 			transform(chunk, controller) {
 				switch (chunk.type) {
@@ -178,6 +190,13 @@ export const logger: LanguageModelV2Middleware = {
 					responseJson.raw = rawChunks;
 				}
 
+				const streamInputTokens = usage?.inputTokens?.total;
+				const streamOutputTokens = usage?.outputTokens?.total;
+				const streamTotalTokens =
+					streamInputTokens != null && streamOutputTokens != null
+						? streamInputTokens + streamOutputTokens
+						: undefined;
+
 				const logs = await insertLog({
 					model: model.modelId,
 					prompt: prompt.text,
@@ -188,9 +207,9 @@ export const logger: LanguageModelV2Middleware = {
 					response_json: responseJson,
 					duration_ms: durationMs,
 					datetime_utc: datetimeUtc,
-					input_tokens: usage?.inputTokens,
-					output_tokens: usage?.outputTokens,
-					total_tokens: usage?.totalTokens,
+					input_tokens: streamInputTokens,
+					output_tokens: streamOutputTokens,
+					total_tokens: streamTotalTokens,
 				});
 
 				if (logs[0]?.id) {

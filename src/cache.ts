@@ -102,7 +102,7 @@ export async function lookupCache(
 	let bestMatch: CacheMatch | null = null;
 
 	for (const entry of candidateEntries) {
-		const rawEmbedding = entry.query_embedding;
+		const rawEmbedding: unknown = entry.query_embedding;
 
 		let embeddingBuffer: Buffer | null = null;
 		if (Buffer.isBuffer(rawEmbedding)) {

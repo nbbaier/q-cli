@@ -2,7 +2,7 @@
 import * as readline from "node:readline";
 import { openai } from "@ai-sdk/openai";
 import {
-	type LanguageModelV2,
+	type LanguageModel,
 	type ModelMessage,
 	streamText,
 	wrapLanguageModel,
@@ -36,7 +36,7 @@ import { getLastLogId, logger, setLastLogId } from "./logger";
 /**
  * Create a wrapped language model with logging middleware
  */
-function createModel(modelId: string): LanguageModelV2 {
+function createModel(modelId: string): LanguageModel {
 	return wrapLanguageModel({
 		model: openai(modelId),
 		middleware: [logger],

@@ -59,20 +59,20 @@ function ensureConfigDir(): void {
 	}
 }
 
-function loadConfigFile(): Partial<Config> {
+function loadConfigFile(): DeepPartial<Config> {
 	const configPath = getConfigPath();
 	if (!existsSync(configPath)) {
 		return {};
 	}
 	try {
 		const content = readFileSync(configPath, "utf-8");
-		return JSON.parse(content) as Partial<Config>;
+		return JSON.parse(content) as DeepPartial<Config>;
 	} catch {
 		return {};
 	}
 }
 
-export function saveConfig(config: Partial<Config>): void {
+export function saveConfig(config: DeepPartial<Config>): void {
 	ensureConfigDir();
 	const configPath = getConfigPath();
 	const existingConfig = loadConfigFile();
@@ -82,10 +82,14 @@ export function saveConfig(config: Partial<Config>): void {
 	});
 }
 
+type DeepPartial<T> = {
+	[P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};
+
 function deepMerge(
-	target: Partial<Config>,
-	source: Partial<Config>,
-): Partial<Config> {
+	target: DeepPartial<Config>,
+	source: DeepPartial<Config>,
+): DeepPartial<Config> {
 	return {
 		...target,
 		...(target.cache || source.cache
