@@ -1,7 +1,6 @@
 {
 	"name": "q-cli",
 	"version": "0.1.0",
-	"type": "module",
 	"bin": {
 		"q": "./dist/index.mjs"
 	},
@@ -9,11 +8,14 @@
 		"dist",
 		"migrations"
 	],
+	"type": "module",
 	"scripts": {
 		"build": "tsdown src/index.ts --platform node --format esm --outDir dist",
 		"migrate": "bun src/migrate.ts",
-		"lint:fix": "biome check --write",
-		"lint": "biome check",
+		"lint": "oxlint",
+		"lint:fix": "oxlint --fix",
+		"fmt": "oxfmt",
+		"fmt:check": "oxfmt --check",
 		"prepare": "bun run build"
 	},
 	"dependencies": {
@@ -32,6 +34,8 @@
 		"@types/bun": "^1.4.2",
 		"@types/node": "^26.6.4",
 		"drizzle-kit": "^0.31.10",
+		"oxfmt": "^0.72.0",
+		"oxlint": "^1.87.0",
 		"tsdown": "^0.21.7",
 		"typescript": "^6.0.2"
 	},
