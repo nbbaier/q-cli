@@ -18,9 +18,9 @@ Add semantic caching to q-cli to avoid redundant API calls when similar queries 
 
 - **Context-independent queries**: Cache based on query embedding alone
 - **Context-dependent queries** (e.g., "run it again", "modify that"):
-  - Cache key includes a hash of the context
-  - Context hash is generated from **response texts only** (not full context JSON)
-  - Matching is **two-stage**: First match query embedding, then verify context hash matches
+   - Cache key includes a hash of the context
+   - Context hash is generated from **response texts only** (not full context JSON)
+   - Matching is **two-stage**: First match query embedding, then verify context hash matches
 
 ### Embedding Strategy (Hybrid)
 
@@ -48,13 +48,14 @@ Add semantic caching to q-cli to avoid redundant API calls when similar queries 
 
 - **Default**: Subtle indicator (e.g., "(cached)" suffix or different spinner color)
 - **Verbose mode** (`--verbose`): Show full details:
-  - Original query that was matched
-  - Similarity score
-  - Age of cached entry
+   - Original query that was matched
+   - Similarity score
+   - Age of cached entry
 
 ### Regenerate Flow
 
 When displaying a cached result, show prompt:
+
 ```
     <cached command here>
 
@@ -63,6 +64,7 @@ Enter to copy | r to regenerate | Ctrl+C to exit
 ```
 
 If user presses `r`:
+
 1. Clear the cached output
 2. Make fresh API call
 3. Display new result with standard prompt (Enter to copy, Ctrl+C to exit)
@@ -71,20 +73,20 @@ If user presses `r`:
 ### First-Run Experience
 
 - On first query, prompt user:
-  ```
-  Would you like to enable query caching?
-  Caching reduces API calls by reusing responses for similar queries.
-  [y/n]:
-  ```
+   ```
+   Would you like to enable query caching?
+   Caching reduces API calls by reusing responses for similar queries.
+   [y/n]:
+   ```
 - Store preference in config file
 
 ## Logging
 
 - Cache hits ARE logged to the responses table
 - Cache hit log entries include:
-  - `cached: true` flag to distinguish from fresh API calls
-  - `cache_source_id`: Reference to the original cached entry
-  - `similarity_score`: The match confidence
+   - `cached: true` flag to distinguish from fresh API calls
+   - `cache_source_id`: Reference to the original cached entry
+   - `similarity_score`: The match confidence
 - **Copy status**: Only the new log entry is marked as copied (original cache source unchanged)
 
 ## Storage Schema
@@ -108,6 +110,7 @@ CREATE TABLE cache_entries (
 ### Extended `responses` Table
 
 Add columns:
+
 ```sql
 cached BOOLEAN DEFAULT FALSE,
 cache_source_id INTEGER,          -- FK to cache_entries.id when cached=true
@@ -124,19 +127,19 @@ similarity_score REAL             -- Similarity score when cached=true
 
 ```json
 {
-  "cache": {
-    "enabled": true,
-    "similarity_threshold": 0.85,
-    "expiry_days": 30
-  },
-  "defaults": {
-    "model": "gpt-4.1-mini",
-    "context_limit": 3,
-    "verbose": false
-  },
-  "api": {
-    "openai_api_key": null  // Falls back to OPENAI_API_KEY env var
-  }
+   "cache": {
+      "enabled": true,
+      "similarity_threshold": 0.85,
+      "expiry_days": 30
+   },
+   "defaults": {
+      "model": "gpt-4.1-mini",
+      "context_limit": 3,
+      "verbose": false
+   },
+   "api": {
+      "openai_api_key": null // Falls back to OPENAI_API_KEY env var
+   }
 }
 ```
 

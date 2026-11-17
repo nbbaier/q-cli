@@ -6,7 +6,10 @@ import type {
 } from "@ai-sdk/provider";
 import { insertLog } from "./db/queries";
 
-const argv = typeof globalThis !== "undefined" && "Bun" in globalThis ? (globalThis as Record<string, any>).Bun.argv : process.argv;
+const argv =
+	typeof globalThis !== "undefined" && "Bun" in globalThis
+		? (globalThis as Record<string, any>).Bun.argv
+		: process.argv;
 const logRawStream = argv.includes("--log-raw-stream");
 
 let lastLogId: number | null = null;

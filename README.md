@@ -66,14 +66,14 @@ bun run src/index.ts logs --path
 
 ### Logged data
 
--  Prompt text
--  Generated response
--  Model used
--  Duration (ms)
--  Token usage (input/output/total)
--  Whether the command was copied
+- Prompt text
+- Generated response
+- Model used
+- Duration (ms)
+- Token usage (input/output/total)
+- Whether the command was copied
 
 ## Requirements
 
--  [Bun](https://bun.sh) v1.0+
--  OpenAI API key (set `OPENAI_API_KEY` environment variable)
+- [Bun](https://bun.sh) v1.0+
+- OpenAI API key (set `OPENAI_API_KEY` environment variable)

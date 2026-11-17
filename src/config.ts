@@ -95,24 +95,24 @@ function deepMerge(
 		...(target.cache || source.cache
 			? {
 					cache: {
-						...(target.cache || {}),
-						...(source.cache || {}),
+						...target.cache,
+						...source.cache,
 					},
 				}
 			: {}),
 		...(target.defaults || source.defaults
 			? {
 					defaults: {
-						...(target.defaults || {}),
-						...(source.defaults || {}),
+						...target.defaults,
+						...source.defaults,
 					},
 				}
 			: {}),
 		...(target.api || source.api
 			? {
 					api: {
-						...(target.api || {}),
-						...(source.api || {}),
+						...target.api,
+						...source.api,
 					},
 				}
 			: {}),
